@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全景权限说明</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    background: #f0f2f5;
+    min-height: 100vh;
+  }
+
+  /* 背景层：功能界面截图 */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    background: url('企业微信截图_abcbc644-104d-409a-ac55-c4677b911d98.png') top left / cover no-repeat;
+    filter: brightness(0.6);
+    z-index: 0;
+  }
+
+  /* 遮罩 */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1;
+  }
+
+  /* 弹窗 */
+  .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 780px;
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* 弹窗头部 */
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e8e8e8;
+    flex-shrink: 0;
+  }
+  .modal-header h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+  .modal-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 18px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover {
+    background: #f0f0f0;
+    color: #333;
+  }
+
+  /* 弹窗内容 */
+  .modal-body {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .modal-body::-webkit-scrollbar { width: 6px; }
+  .modal-body::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
+  .modal-body::-webkit-scrollbar-thumb:hover { background: #bfbfbf; }
+
+  /* 概述 */
+  .intro {
+    font-size: 13px;
+    color: #595959;
+    line-height: 1.7;
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: #f7f9fc;
+    border-radius: 2px;
+    border-left: 3px solid #2B5AED;
+  }
+
+  /* 示意图 */
+  .diagram-section {
+    margin-bottom: 16px;
+  }
+  .diagram-section img {
+    width: 100%;
+    border-radius: 2px;
+    border: 1px solid #e8e8e8;
+  }
+
+  /* 权限卡片 */
+  .perm-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 2px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .perm-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .perm-card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .perm-table {
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #595959;
+  }
+  .perm-table td {
+    padding: 3px 0;
+    vertical-align: top;
+  }
+  .perm-table td:first-child {
+    width: 72px;
+    color: #8c8c8c;
+    white-space: nowrap;
+    padding-right: 10px;
+  }
+
+  .entry-desc {
+    font-size: 12px;
+    color: #8c8c8c;
+    margin-top: 2px;
+  }
+
+  /* 配置入口链接 */
+  .config-link {
+    color: #2B5AED;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    font-weight: 500;
+    border-bottom: 1.5px dashed transparent;
+    transition: border-color 0.2s;
+  }
+  .config-link:hover {
+    border-bottom-color: #2B5AED;
+  }
+
+  /* Tooltip */
+  .tooltip-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+  .tooltip-wrapper .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    white-space: nowrap;
+    transition: opacity 0.2s, visibility 0.2s;
+    pointer-events: none;
+    font-weight: 400;
+  }
+  .tooltip-wrapper .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #333;
+  }
+  .tooltip-wrapper:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  /* 标签 */
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    margin-right: 4px;
+  }
+  .tag.view { background: #e6f0ff; color: #2B5AED; }
+  .tag.edit { background: #e6f7e9; color: #389e0d; }
+  .tag.auth { background: #fff3e6; color: #d46b08; }
+
+  /* 常见误区 */
+  .warning-section {
+    margin-top: 12px;
+    background: #fffbe6;
+    border: 1px solid #ffe58f;
+    border-radius: 2px;
+    padding: 10px 14px;
+  }
+  .warning-section h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #d48806;
+    margin-bottom: 6px;
+  }
+  .warning-section p {
+    font-size: 13px;
+    color: #8c6d1f;
+    line-height: 1.8;
+  }
+  .warning-section strong {
+    color: #ad6800;
+  }
+
+  /* 分隔线 */
+  .divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 20px 0;
+  }
+
+  /* 底部 */
+  .modal-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+  .btn-primary {
+    padding: 6px 20px;
+    background: #2B5AED;
+    color: #fff;
+    border: none;
+    border-radius: 2px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-primary:hover {
+    background: #1a4ad4;
+  }
+
+  /* code 样式 */
+  code {
+    font-family: "SF Mono", "Monaco", "Menlo", monospace;
+    font-size: 12px;
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #d4380d;
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景层 -->
+<div class="bg-layer"></div>
+<div class="overlay"></div>
+
+<!-- 弹窗 -->
+<div class="modal">
+  <div class="modal-header">
+    <h2>全景权限说明</h2>
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+  </div>
+
+  <div class="modal-body">
+    <!-- 概述 -->
+    <div class="intro">
+      FineReport 提供三种独立的权限体系，分别控制目录访问、URL 直接访问和设计器远程编辑。三者各自独立配置，互不影响。理解它们的作用范围和配置入口，是正确管理权限的前提。
+    </div>
+
+    <!-- 示意图 -->
+    <div class="diagram-section">
+      <img src="访问方式&权限示意图.png" alt="三种权限的关系与访问路径">
+    </div>
+
+    <!-- 权限卡片 1: 目录权限 -->
+    <div class="perm-card">
+      <div class="perm-card-header">
+        <h3>目录权限</h3>
+      </div>
+      <table class="perm-table">
+        <tr>
+          <td>配置入口</td>
+          <td>
+            <span class="tooltip-wrapper">
+              <a class="config-link" onclick="navigateTo('权限管理')">权限管理</a>
+              <span class="tooltip">点击前往配置</span>
+            </span>
+            <div class="entry-desc">除目录管理外权限管理下还包含人员管理、系统管理、数据连接、定时调度等权限配置<br>控制用户在决策平台目录里能否看到、编辑某个目录节点或报表</div>
+          </td>
+        </tr>
+        <tr>
+          <td>权限类型</td>
+          <td>查看权限、编辑权限、授权权限</td>
+        </tr>
+        <tr>
+          <td>适用范围</td>
+          <td>平台目录访问、应用中模板预览。用户必须拥有目录查看权限，才能在应用中预览该节点下的报表。</td>
+        </tr>
+        <tr>
+          <td>访问方式</td>
+          <td>决策平台目录打开（<code>access + id</code> 方式）</td>
+        </tr>
+        <tr>
+          <td>管理方式</td>
+          <td>超管或次管设置，支持按部门 / 角色 / 用户分配，支持继承与并集规则<br>其中模板展示支持的展示终端包括 PC、平板和手机。在设置模板时，可以选择需要的展示终端，以确保模板能够在相应的设备上正常显示</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 权限卡片 2: 模板认证权限 -->
+    <div class="perm-card">
+      <div class="perm-card-header">
+        <h3>模板认证权限</h3>
+      </div>
+      <table class="perm-table">
+        <tr>
+          <td>配置入口</td>
+          <td>
+            <span class="tooltip-wrapper">
+              <a class="config-link" onclick="navigateTo('模板认证')">模板认证</a>
+              <span class="tooltip">点击前往配置</span>
+            </span>
+            <div class="entry-desc">控制用户通过 URL 路径直接访问模板的权限，与目录权限相互独立</div>
+          </td>
+        </tr>
+        <tr>
+          <td>权限类型</td>
+          <td>分配模板查看权限</td>
+        </tr>
+        <tr>
+          <td>适用范围</td>
+          <td>设计器端或通过 viewlet= 路径直接访问模板。只有开启角色权限认证，才能精细控制用户访问的模板。</td>
+        </tr>
+        <tr>
+          <td>访问方式</td>
+          <td><code>decision/view/report?viewlet=xxx.cpt</code></td>
+        </tr>
+        <tr>
+          <td>管理方式</td>
+          <td>通常由超管设置，涉及模板的认证状态，影响预览与使用</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 权限卡片 3: 远程设计权限 -->
+    <div class="perm-card">
+      <div class="perm-card-header">
+        <h3>远程设计权限</h3>
+      </div>
+      <table class="perm-table">
+        <tr>
+          <td>配置入口</td>
+          <td>
+            超管在<span class="tooltip-wrapper">
+              <a class="config-link" onclick="navigateTo('远程设计')">远程设计</a>
+              <span class="tooltip">点击前往配置</span>
+            </span>中配置
+            <div class="entry-desc">控制用户通过设计器远程连接服务器进行报表编辑的权限</div>
+          </td>
+        </tr>
+        <tr>
+          <td>权限类型</td>
+          <td>远程设计器内文件夹及模板编辑权限</td>
+        </tr>
+        <tr>
+          <td>适用范围</td>
+          <td>仅适用于设计器端远程连接服务器，与平台访问权限完全独立</td>
+        </tr>
+        <tr>
+          <td>访问方式</td>
+          <td>设计器 → 服务器 → 远程设计连接</td>
+        </tr>
+        <tr>
+          <td>管理方式</td>
+          <td>仅超管可配置，无次级管理员；不支持用平台单点接口替代认证</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- 常见误区 -->
+    <div class="warning-section">
+      <h4>⚠️ 常见误区</h4>
+      <p>
+        在<span class="tooltip-wrapper"><a class="config-link" onclick="navigateTo('权限管理')" style="color:#ad6800;border-bottom-color:#ad6800;">权限管理</a><span class="tooltip">点击前往配置</span></span>里分配了目录权限，<strong>不代表</strong>用 URL 直接访问模板也有权限。两条路径由两套配置独立控制，需要分别配置。<br><br>
+        如用户反馈"配了权限但 URL 访问报无权限"，请检查<span class="tooltip-wrapper"><a class="config-link" onclick="navigateTo('模板认证')" style="color:#ad6800;border-bottom-color:#ad6800;">模板认证</a><span class="tooltip">点击前往配置</span></span>配置。
+      </p>
+    </div>
+
+    <!-- 更多文档 -->
+    <div style="margin-top: 12px; font-size: 13px; color: #8c8c8c;">
+      更多权限内容请查阅 <a href="https://help.fanruan.com/finereport/doc-view-711.html" target="_blank" style="color: #2B5AED; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s;" onmouseover="this.style.borderBottomColor='#2B5AED'" onmouseout="this.style.borderBottomColor='transparent'">权限</a>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn-primary" onclick="closeModal()">我知道了</button>
+  </div>
+</div>
+
+<script>
+  function navigateTo(target) {
+  }
+
+  function closeModal() {
+    document.querySelector('.modal').style.display = 'none';
+    document.querySelector('.overlay').style.display = 'none';
+  }
+</script>
+</body>
+</html>
